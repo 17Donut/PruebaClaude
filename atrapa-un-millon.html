@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atrapa un Millón</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ══ RESET & VARS ════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#FFD700;--gold2:#F5A623;--gold3:#C8860A;--gold-dim:#7A5000;
+  --blue:#003ECC;--blue2:#0077FF;--blue3:#44AAFF;
+  --green:#00E066;--red:#FF2244;
+  --bg:#04040F;--panel:#0B0B22;--panel2:#11113A;--panelB:#0D0D30;
+  --text:#FFFFFF;--dim:#7777AA;--dimmer:#3A3A60;
+  --r:16px;
+}
+html,body{height:100%;overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh}
+
+/* ══ CANVAS BG ════════════════════════════════════════════ */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ══ APP SHELL ════════════════════════════════════════════ */
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+.screen{width:100%;max-width:1120px;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px}
+.hidden{display:none!important}
+
+/* ══ INTRO SCREEN ═════════════════════════════════════════ */
+#s-intro{justify-content:center;gap:20px;padding:32px 16px}
+.intro-glow{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,165,0,.12) 0%,transparent 65%);
+  pointer-events:none}
+.logo-wrap{text-align:center;position:relative;z-index:1}
+.logo-main{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,9vw,6.5rem);
+  letter-spacing:.07em;line-height:.9;
+  background:linear-gradient(160deg,#fff8c0 0%,#FFD700 35%,#F5A623 65%,#C8860A 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 40px rgba(255,200,0,.55));
+  animation:logoGlow 3s ease-in-out infinite}
+@keyframes logoGlow{
+  0%,100%{filter:drop-shadow(0 0 30px rgba(255,200,0,.5))}
+  50%{filter:drop-shadow(0 0 70px rgba(255,200,0,.95)) drop-shadow(0 0 120px rgba(255,120,0,.4))}}
+.logo-hosted{font-size:.7rem;letter-spacing:.4em;color:var(--blue3);text-transform:uppercase;margin-top:6px}
+.logo-prize{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,4rem);
+  background:linear-gradient(135deg,#7BFFB0,#00E066,#009944);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 25px rgba(0,220,100,.7));
+  animation:floatPrize 2.5s ease-in-out infinite}
+@keyframes floatPrize{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.intro-rules-box{max-width:580px;width:100%;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,215,0,.2);border-radius:20px;padding:24px 28px}
+.ir-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.15em;
+  color:var(--gold);margin-bottom:14px;text-align:center}
+.rule{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;font-size:.83rem;
+  color:rgba(255,255,255,.85);line-height:1.5}
+.rnum{min-width:24px;height:24px;border-radius:50%;background:var(--gold);color:#000;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.7rem;flex-shrink:0}
+
+.round-chips-preview{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:4px 0}
+.preview-round{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:6px 12px;font-size:.72rem;color:var(--dim);text-align:center;
+  transition:all .3s}
+.preview-round span{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);display:block}
+
+.btn-start{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.14em;
+  padding:16px 56px;background:linear-gradient(135deg,var(--gold2),var(--gold),var(--gold2));
+  color:#000;border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 0 0 3px rgba(255,215,0,.3),0 6px 28px rgba(255,165,0,.45);
+  transition:all .2s;animation:startPulse 2s ease-in-out infinite}
+.btn-start:hover{transform:scale(1.06) translateY(-3px);
+  box-shadow:0 0 0 5px rgba(255,215,0,.5),0 10px 44px rgba(255,165,0,.65);animation:none}
+@keyframes startPulse{
+  0%,100%{box-shadow:0 0 0 3px rgba(255,215,0,.3),0 6px 28px rgba(255,165,0,.45)}
+  50%{box-shadow:0 0 0 7px rgba(255,215,0,.4),0 6px 44px rgba(255,165,0,.6)}}
+
+/* ══ GAME LAYOUT ══════════════════════════════════════════ */
+#s-game{padding:12px;justify-content:flex-start}
+.game-grid{width:100%;display:grid;grid-template-columns:1fr 190px;grid-template-rows:auto 1fr;gap:14px}
+.game-grid>.topbar{grid-column:1/-1}
+
+/* ══ TOP BAR ══════════════════════════════════════════════ */
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  background:rgba(8,8,30,.85);border:1px solid rgba(255,215,0,.14);
+  border-radius:var(--r);padding:10px 22px;backdrop-filter:blur(10px);gap:12px}
+.tb-logo{font-family:'Bebas Neue',sans-serif;font-size:1.55rem;letter-spacing:.1em;
+  background:linear-gradient(135deg,#FFD700,#F5A623);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tb-section{display:flex;flex-direction:column;align-items:center;gap:2px}
+.tb-label{font-size:.55rem;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
+.tb-val{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;line-height:1}
+.tb-val.round{color:var(--gold)}
+.tb-val.prize{color:var(--green);transition:all .5s}
+.tb-val.chips{color:var(--blue3)}
+.tb-val.prize.bump{animation:prizeBump .6s ease}
+@keyframes prizeBump{0%,100%{transform:scale(1)}50%{transform:scale(1.35);color:#FFD700}}
+.tb-divider{width:1px;height:40px;background:rgba(255,255,255,.1)}
+
+/* ══ MAIN CONTENT ══════════════════════════════════════════ */
+.main-col{display:flex;flex-direction:column;gap:14px;min-height:0}
+
+/* ══ PHASE: CATEGORY ══════════════════════════════════════ */
+.phase-cat{display:flex;flex-direction:column;align-items:center;gap:20px;padding:10px 0}
+.phase-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,3vw,1.8rem);
+  letter-spacing:.14em;color:rgba(255,255,255,.92);text-align:center}
+.phase-title em{color:var(--gold);font-style:normal}
+
+.round-info-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:12px 20px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center}
+.ri-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+.ri-label{font-size:.58rem;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.ri-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);line-height:1}
+.ri-val.blue{color:var(--blue3)}
+.ri-val.green{color:var(--green)}
+
+.type-badge{font-size:.75rem;font-weight:700;padding:5px 14px;border-radius:20px;text-align:center}
+.type-badge.normal{background:rgba(0,68,204,.25);border:1px solid rgba(0,119,255,.4);color:var(--blue3)}
+.type-badge.triple{background:rgba(255,165,0,.15);border:1px solid rgba(255,215,0,.4);color:var(--gold)}
+.type-badge.final{background:rgba(0,220,102,.15);border:1px solid rgba(0,220,102,.4);color:var(--green)}
+
+.cats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:680px}
+.cat-card{background:linear-gradient(145deg,var(--panel2),var(--panel));
+  border:2px solid rgba(255,255,255,.07);border-radius:18px;
+  padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;
+  cursor:pointer;transition:all .3s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden}
+.cat-card::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(255,215,0,.12),transparent 60%);
+  opacity:0;transition:opacity .3s}
+.cat-card:hover::before{opacity:1}
+.cat-card:hover{border-color:var(--gold);transform:translateY(-5px) scale(1.03);
+  box-shadow:0 8px 30px rgba(255,165,0,.3),0 0 0 1px rgba(255,215,0,.25)}
+.cat-card:active{transform:translateY(-2px) scale(1.01)}
+.cc-icon{font-size:2.6rem;filter:drop-shadow(0 0 8px rgba(255,215,0,.4));transition:transform .3s}
+.cat-card:hover .cc-icon{transform:scale(1.2) rotate(-8deg)}
+.cc-name{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.1em;
+  color:var(--gold);text-align:center}
+.cc-desc{font-size:.65rem;color:var(--dim);text-align:center;line-height:1.4}
+
+/* ══ PHASE: QUESTION ══════════════════════════════════════ */
+.phase-q{display:flex;flex-direction:column;gap:14px}
+.q-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.q-cat-pill{display:flex;align-items:center;gap:8px;background:rgba(255,215,0,.1);
+  border:1px solid rgba(255,215,0,.3);border-radius:30px;padding:5px 14px}
+.q-cat-ico{font-size:1.1rem}
+.q-cat-nm{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.1em;color:var(--gold)}
+.chips-pill{display:flex;align-items:center;gap:8px;background:rgba(0,68,204,.2);
+  border:1px solid rgba(0,119,255,.35);border-radius:30px;padding:5px 14px}
+.chips-pill-num{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--blue3);line-height:1;
+  transition:all .25s}
+.chips-pill-lbl{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+.chips-pill-num.bounce{animation:numBounce .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes numBounce{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+
+.question-box{background:linear-gradient(145deg,rgba(255,215,0,.05),rgba(0,68,204,.05));
+  border:1px solid rgba(255,255,255,.1);border-left:4px solid var(--gold);
+  border-radius:var(--r);padding:18px 22px}
+.q-text{font-size:clamp(.95rem,2.1vw,1.2rem);font-weight:700;line-height:1.55;color:#fff}
+
+/* chip bank */
+.chip-bank-wrap{display:flex;flex-direction:column;gap:6px;align-items:center}
+.cb-label{font-size:.62rem;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.chip-bank{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;min-height:44px}
+.bc{width:38px;height:38px;border-radius:50%;
+  background:radial-gradient(circle at 33% 30%,#fffce0,#FFD700 40%,#C8860A 82%);
+  border:2.5px solid rgba(255,255,255,.45);
+  box-shadow:0 3px 10px rgba(255,165,0,.5),inset 0 1px 3px rgba(255,255,255,.6);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:.55rem;font-weight:900;color:rgba(0,0,0,.75);
+  transition:all .2s;animation:bcAppear .4s cubic-bezier(.34,1.56,.64,1) both;
+  user-select:none;position:relative}
+.bc:hover{transform:scale(1.18) translateY(-4px);box-shadow:0 7px 20px rgba(255,165,0,.7)}
+.bc.spent{opacity:.15;cursor:default;pointer-events:none;transform:scale(.8)}
+@keyframes bcAppear{from{transform:scale(0) rotate(180deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+/* options grid */
+.opts-grid{display:grid;gap:10px}
+.opts-grid.o2{grid-template-columns:1fr 1fr}
+.opts-grid.o3{grid-template-columns:repeat(3,1fr)}
+.opts-grid.o4{grid-template-columns:1fr 1fr}
+.opts-grid.o5{grid-template-columns:1fr 1fr}
+.opts-grid.o6{grid-template-columns:1fr 1fr 1fr}
+
+.opt{background:linear-gradient(145deg,var(--panel2),var(--panel));
+  border:2px solid rgba(255,255,255,.07);border-radius:13px;
+  padding:12px 14px;cursor:pointer;transition:all .25s;
+  position:relative;min-height:76px;display:flex;flex-direction:column;
+  justify-content:space-between;overflow:hidden;user-select:none}
+.opt::after{content:'';position:absolute;inset:0;border-radius:11px;opacity:0;transition:opacity .3s;
+  background:radial-gradient(circle at 50% 50%,rgba(255,215,0,.14),transparent 65%)}
+.opt:hover::after{opacity:1}
+.opt:hover{border-color:rgba(255,215,0,.45);transform:translateY(-2px);
+  box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.opt.loaded{border-color:rgba(255,215,0,.6);
+  background:linear-gradient(145deg,rgba(255,215,0,.1),var(--panel))}
+.opt.final-pulse{animation:finalPulse 1s ease-in-out infinite}
+@keyframes finalPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.4)}
+  50%{box-shadow:0 0 0 8px rgba(255,215,0,.0)}}
+.opt.reveal-correct{border-color:var(--green)!important;
+  background:linear-gradient(145deg,rgba(0,220,100,.18),var(--panel))!important;
+  animation:correctFlash .8s ease}
+.opt.reveal-wrong{border-color:var(--red)!important;
+  background:linear-gradient(145deg,rgba(255,34,68,.12),var(--panel))!important}
+@keyframes correctFlash{
+  0%,100%{box-shadow:none}
+  40%{box-shadow:0 0 50px rgba(0,220,100,.85),0 0 100px rgba(0,220,100,.35)}}
+
+.opt-letter{position:absolute;top:8px;left:10px;font-family:'Bebas Neue',sans-serif;
+  font-size:.9rem;color:var(--dimmer);letter-spacing:.05em;transition:color .3s}
+.opt.loaded .opt-letter{color:var(--gold)}
+.opt-text{font-size:.82rem;font-weight:600;color:#fff;margin-left:22px;line-height:1.4;
+  margin-top:2px}
+.opt-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;margin-left:22px;min-height:18px}
+.oc{width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle at 33% 30%,#fffce0,#FFD700 40%,#C8860A 82%);
+  border:1.5px solid rgba(255,255,255,.35);
+  box-shadow:0 1px 4px rgba(255,165,0,.5);
+  cursor:pointer;transition:all .2s;animation:ocIn .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes ocIn{from{transform:scale(0)}to{transform:scale(1)}}
+.oc:hover{transform:scale(1.3);box-shadow:0 2px 8px rgba(255,165,0,.8)}
+.oc.won{background:radial-gradient(circle,#aaffcc,#00E066,#009944);
+  animation:ocWon .6s ease}
+.oc.lost{animation:ocLost .5s ease forwards}
+@keyframes ocWon{0%,100%{transform:scale(1)}50%{transform:scale(1.6) translateY(-5px)}}
+@keyframes ocLost{0%{transform:scale(1)}40%{transform:scale(1.3) rotate(25deg)}100%{transform:scale(0);opacity:0}}
+
+.correct-tag{position:absolute;top:7px;right:8px;background:var(--green);color:#000;
+  font-weight:900;font-size:.58rem;padding:2px 7px;border-radius:20px;opacity:0;
+  transition:opacity .4s;letter-spacing:.04em}
+.opt.reveal-correct .correct-tag{opacity:1}
+
+/* Type-specific instruction */
+.type-instruction{font-size:.78rem;font-weight:700;text-align:center;padding:8px 16px;
+  border-radius:10px;letter-spacing:.04em}
+.type-instruction.triple{background:rgba(255,165,0,.12);color:var(--gold);
+  border:1px solid rgba(255,165,0,.25)}
+.type-instruction.final{background:rgba(0,220,100,.12);color:var(--green);
+  border:1px solid rgba(0,220,100,.25);font-size:.88rem}
+
+/* confirm */
+.btn-confirm{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.12em;
+  padding:14px 40px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;
+  border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 4px 24px rgba(0,120,255,.4);transition:all .25s;align-self:center;
+  animation:confirmPulse 1.5s ease-in-out infinite}
+.btn-confirm:disabled{opacity:.3;cursor:not-allowed;transform:none!important;
+  box-shadow:none!important;animation:none}
+.btn-confirm:not(:disabled):hover{transform:translateY(-3px) scale(1.04);
+  box-shadow:0 8px 36px rgba(0,120,255,.65)}
+@keyframes confirmPulse{
+  0%,100%{box-shadow:0 4px 24px rgba(0,120,255,.4)}
+  50%{box-shadow:0 4px 40px rgba(0,120,255,.7),0 0 0 4px rgba(0,120,255,.15)}}
+
+/* ══ REVEAL MODAL ═════════════════════════════════════════ */
+.reveal-overlay{position:fixed;inset:0;background:rgba(4,4,15,.82);backdrop-filter:blur(6px);
+  z-index:80;display:flex;align-items:center;justify-content:center;
+  animation:fadeInOv .35s ease}
+@keyframes fadeInOv{from{opacity:0}to{opacity:1}}
+.reveal-card{background:linear-gradient(145deg,#0c0c2e,#090925);
+  border:2px solid var(--rc-border,var(--gold));
+  border-radius:26px;padding:42px 44px;max-width:500px;width:93%;text-align:center;
+  position:relative;overflow:hidden;
+  animation:rcSlide .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes rcSlide{from{transform:translateY(70px) scale(.85);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.reveal-card::before{content:'';position:absolute;top:0;left:-200%;width:500%;height:3px;
+  background:var(--rc-border,var(--gold));animation:scanLine 2s ease infinite}
+@keyframes scanLine{0%{left:-200%}100%{left:200%}}
+.reveal-card.rc-correct{--rc-border:var(--green)}
+.reveal-card.rc-wrong{--rc-border:var(--red)}
+.reveal-card.rc-win{--rc-border:var(--gold)}
+
+.rc-icon{font-size:3.8rem;margin-bottom:10px;animation:iconSpin .6s .2s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes iconSpin{from{transform:scale(0) rotate(-180deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+.rc-title{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:.1em;margin-bottom:6px}
+.rc-title.ct{color:var(--green)}.rc-title.cw{color:var(--red)}.rc-title.cg{color:var(--gold)}
+.rc-sub{font-size:.88rem;color:var(--dim);margin-bottom:16px;line-height:1.5}
+.rc-answer{background:rgba(0,220,100,.1);border:1px solid rgba(0,220,100,.3);border-radius:10px;
+  padding:10px 18px;margin:12px 0;font-weight:700;font-size:.95rem;color:var(--green)}
+.rc-gain{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--gold);letter-spacing:.08em;
+  margin:6px 0;animation:gainPop .5s .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes gainPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.rc-total{font-size:.78rem;color:var(--dim)}
+.rc-chkpt{background:rgba(0,68,204,.15);border:1px solid rgba(0,119,255,.3);border-radius:8px;
+  padding:8px 14px;margin:10px 0;font-size:.78rem;color:var(--blue3)}
+.btn-next{margin-top:22px;font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.12em;
+  padding:12px 38px;background:linear-gradient(135deg,var(--gold3),var(--gold2),var(--gold3));
+  color:#000;border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 4px 22px rgba(255,165,0,.4);transition:all .2s}
+.btn-next:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 7px 32px rgba(255,165,0,.6)}
+
+/* ══ PRIZE LADDER SIDEBAR ═════════════════════════════════ */
+.ladder-panel{background:rgba(8,8,28,.75);border:1px solid rgba(255,215,0,.12);
+  border-radius:var(--r);padding:14px 12px;backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;gap:5px;align-self:start;position:sticky;top:14px}
+.lp-title{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:.18em;
+  color:var(--dim);text-align:center;margin-bottom:4px;text-transform:uppercase}
+.lp-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;
+  border:1px solid transparent;transition:all .35s;position:relative}
+.lp-row.lp-past-win{background:rgba(0,220,100,.1);border-color:rgba(0,220,100,.25)}
+.lp-row.lp-past-zero{background:rgba(255,34,68,.07);border-color:rgba(255,34,68,.15)}
+.lp-row.lp-current{background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.4);
+  animation:rowGlow 1.5s ease-in-out infinite}
+@keyframes rowGlow{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.0)}
+  50%{box-shadow:0 0 10px 2px rgba(255,215,0,.25)}}
+.lp-row.lp-chkpt{border-color:rgba(0,119,255,.2)!important}
+.lp-num{font-family:'Bebas Neue',sans-serif;font-size:.85rem;color:var(--dim);min-width:18px}
+.lp-row.lp-current .lp-num{color:var(--gold)}
+.lp-amt{flex:1;font-family:'Bebas Neue',sans-serif;font-size:.82rem;color:var(--dim);text-align:right}
+.lp-row.lp-current .lp-amt{color:var(--gold);font-size:.95rem}
+.lp-row.lp-past-win .lp-amt{color:var(--green)}
+.lp-row.lp-past-zero .lp-amt{color:var(--red)}
+.lp-ico{font-size:.8rem;min-width:16px;text-align:center}
+.lp-divider{height:1px;background:rgba(255,255,255,.07);margin:2px 0}
+
+/* ══ END SCREEN ═══════════════════════════════════════════ */
+#s-end{justify-content:center;gap:26px;padding:32px 16px}
+.end-wrap{max-width:700px;width:100%;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.end-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,5vw,3.5rem);letter-spacing:.1em;
+  background:linear-gradient(135deg,#FFD700,#F5A623,#C8860A);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.end-prize-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.end-pl{font-size:.7rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+.end-pa{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,9vw,5.5rem);
+  background:linear-gradient(135deg,#7BFFB0,#00E066,#009944);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 35px rgba(0,220,100,.65));
+  animation:endPrize 2.5s ease-in-out infinite}
+@keyframes endPrize{
+  0%,100%{filter:drop-shadow(0 0 30px rgba(0,220,100,.6))}
+  50%{filter:drop-shadow(0 0 65px rgba(0,220,100,.95))}}
+.end-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%}
+.es-box{background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px}
+.es-val{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;line-height:1}
+.es-val.g{color:var(--green)}.es-val.r{color:var(--red)}.es-val.gold{color:var(--gold)}
+.es-lbl{font-size:.6rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+
+.breakdown{width:100%;background:var(--panel);border:1px solid rgba(255,255,255,.06);
+  border-radius:var(--r);overflow:hidden}
+.bk-header{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.15em;
+  color:var(--dim);padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+.bk-row{display:flex;align-items:center;padding:9px 18px;border-bottom:1px solid rgba(255,255,255,.04);
+  gap:10px;font-size:.8rem}
+.bk-row:last-child{border-bottom:none}
+.bk-r{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--dim);min-width:55px}
+.bk-c{flex:1;color:rgba(255,255,255,.7)}
+.bk-info{color:var(--dim);font-size:.72rem;min-width:90px;text-align:right}
+.bk-gain{font-family:'Bebas Neue',sans-serif;font-size:.95rem;min-width:80px;text-align:right}
+.bk-gain.pos{color:var(--green)}.bk-gain.zer{color:var(--dim)}
+
+.btn-again{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.14em;
+  padding:14px 52px;background:linear-gradient(135deg,var(--gold2),var(--gold),var(--gold2));
+  color:#000;border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 4px 30px rgba(255,165,0,.5);transition:all .2s}
+.btn-again:hover{transform:scale(1.06) translateY(-3px);box-shadow:0 8px 48px rgba(255,165,0,.7)}
+
+/* ══ CONFETTI CANVAS ══════════════════════════════════════ */
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:200}
+
+/* ══ TOAST ═════════════════════════════════════════════════ */
+#toast{position:fixed;bottom:22px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:rgba(18,18,46,.96);border:1px solid rgba(255,255,255,.15);border-radius:30px;
+  padding:9px 22px;font-size:.88rem;font-weight:700;z-index:300;
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ══ RESPONSIVE ═══════════════════════════════════════════ */
+@media(max-width:680px){
+  .game-grid{grid-template-columns:1fr}
+  .ladder-panel{display:none}
+  .opts-grid.o3,.opts-grid.o6{grid-template-columns:1fr 1fr}
+  .opts-grid.o5{grid-template-columns:1fr 1fr}
+  .cats-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:420px){
+  .cats-grid{grid-template-columns:1fr}
+  .opts-grid.o4,.opts-grid.o5,.opts-grid.o6,.opts-grid.o3{grid-template-columns:1fr 1fr}
+  .opts-grid.o2{grid-template-columns:1fr}
+}
+
+/* ══ UTILS ═════════════════════════════════════════════════ */
+.fade-in{animation:fadeInOv .4s ease}
+.slide-up{animation:suAnim .4s cubic-bezier(.22,1,.36,1)}
+@keyframes suAnim{from{transform:translateY(28px);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<canvas id="confetti"></canvas>
+<div id="toast"></div>
+<div id="app">
+
+<!-- ══ INTRO SCREEN ═════════════════════════════ -->
+<div class="screen" id="s-intro">
+  <div class="intro-glow"></div>
+  <div class="logo-wrap slide-up">
+    <div class="logo-main">Atrapa un Millón</div>
+    <div class="logo-hosted">El programa de los grandes premios</div>
+  </div>
+  <div class="logo-prize fade-in">1.000.000 €</div>
+  <div class="intro-rules-box slide-up">
+    <div class="ir-title">🎯 Cómo se juega</div>
+    <div class="rule"><div class="rnum">1</div><span>8 rondas para ganar hasta <strong>1.000.000 €</strong>. El premio total se reparte en fichas de <strong>25.000 €</strong>.</span></div>
+    <div class="rule"><div class="rnum">2</div><span>Cada ronda: elige tema, lee la pregunta y <strong>distribuye tus fichas</strong> entre las posibles respuestas.</span></div>
+    <div class="rule"><div class="rnum">3</div><span>Las fichas sobre la respuesta <strong>correcta</strong> se suman a tu premio. Las de las incorrectas se pierden.</span></div>
+    <div class="rule"><div class="rnum">4</div><span>Rondas 6 y 7: <strong>solo 3 opciones</strong>, debes cubrir mínimo 2. Ronda final: <strong>2 opciones</strong>, ¡todo o nada!</span></div>
+  </div>
+  <div class="round-chips-preview" id="preview-chips"></div>
+  <button class="btn-start" onclick="startGame()">¡ATRAPAR EL MILLÓN!</button>
+</div>
+
+<!-- ══ GAME SCREEN ══════════════════════════════ -->
+<div class="screen hidden" id="s-game">
+  <div class="game-grid">
+    <div class="topbar">
+      <div class="tb-logo">Atrapa un Millón</div>
+      <div class="tb-divider"></div>
+      <div class="tb-section"><span class="tb-label">Ronda</span><span class="tb-val round" id="tb-round">1</span></div>
+      <div class="tb-divider"></div>
+      <div class="tb-section"><span class="tb-label">Fichas</span><span class="tb-val chips" id="tb-chips">4</span></div>
+      <div class="tb-divider"></div>
+      <div class="tb-section"><span class="tb-label">Premio</span><span class="tb-val prize" id="tb-prize">0 €</span></div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-col" id="main-col">
+      <!-- dynamically rendered by JS -->
+    </div>
+
+    <!-- Prize ladder -->
+    <div class="ladder-panel" id="ladder-panel">
+      <div class="lp-title">Marcador</div>
+      <div id="ladder-rows"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ END SCREEN ═══════════════════════════════ -->
+<div class="screen hidden" id="s-end">
+  <div class="end-wrap" id="end-wrap">
+    <!-- dynamically rendered -->
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+/* ════════════════════════════════════════════════════════
+   AUDIO ENGINE
+   ════════════════════════════════════════════════════════ */
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+function tone(freq, dur, vol=.15, type='sine'){
+  const osc=AC.createOscillator(), g=AC.createGain();
+  osc.type=type; osc.frequency.value=freq;
+  g.gain.setValueAtTime(vol,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+dur);
+  osc.connect(g); g.connect(AC.destination);
+  osc.start(); osc.stop(AC.currentTime+dur);
+}
+function sfxChip(){ tone(880,.07,.08,'triangle') }
+function sfxRemove(){ tone(440,.07,.06,'triangle') }
+function sfxConfirm(){ tone(550,.12,.1,'sine'); setTimeout(()=>tone(660,.15,.1,'sine'),80) }
+function sfxCorrect(){
+  [660,880,1100,1320].forEach((f,i)=>setTimeout(()=>tone(f,.22,.14,'sine'),i*90));
+}
+function sfxWrong(){
+  tone(220,.2,.12,'sawtooth'); setTimeout(()=>tone(160,.3,.1,'sawtooth'),160);
+}
+function sfxReveal(){ tone(740,.06,.08,'square') }
+function sfxRoundStart(){
+  [440,550,660,880].forEach((f,i)=>setTimeout(()=>tone(f,.25,.1,'sine'),i*70));
+}
+function sfxMillion(){
+  [523,659,784,1047,1319,1568].forEach((f,i)=>setTimeout(()=>tone(f,.35,.18,'sine'),i*120));
+  setTimeout(()=>{tone(1568,.6,.15,'sine')},720);
+}
+function sfxFinalRound(){
+  [330,415,494,659].forEach((f,i)=>setTimeout(()=>tone(f,.3,.12,'sine'),i*100));
+}
+
+/* ════════════════════════════════════════════════════════
+   CONSTANTS
+   ════════════════════════════════════════════════════════ */
+const CHIP_VAL = 25000;
+
+const ROUND_CFG = [
+  {r:1,chips:4,numOpts:4,type:'normal',label:'4 opciones • 4 fichas'},
+  {r:2,chips:4,numOpts:4,type:'normal',label:'4 opciones • 4 fichas'},
+  {r:3,chips:5,numOpts:5,type:'normal',label:'5 opciones • 5 fichas'},
+  {r:4,chips:5,numOpts:5,type:'normal',label:'5 opciones • 5 fichas'},
+  {r:5,chips:6,numOpts:6,type:'normal',label:'6 opciones • 6 fichas'},
+  {r:6,chips:4,numOpts:3,type:'triple',label:'3 opciones • 4 fichas • mínimo 2 opciones'},
+  {r:7,chips:4,numOpts:3,type:'triple',label:'3 opciones • 4 fichas • mínimo 2 opciones'},
+  {r:8,chips:8,numOpts:2,type:'final', label:'2 opciones • 8 fichas • TODO A UNO'},
+];
+// Max per round in €
+// Total chips = 4+4+5+5+6+4+4+8 = 40 × 25000 = 1,000,000 €
+
+const CATEGORIES = {
+  'Historia':    {icon:'🏛️', desc:'Civilizaciones y grandes momentos'},
+  'Ciencia':     {icon:'🔬', desc:'Descubrimientos y fenómenos'},
+  'Geografía':   {icon:'🌍', desc:'El mundo y sus territorios'},
+  'Arte':        {icon:'🎨', desc:'Creatividad a través de los siglos'},
+  'Deporte':     {icon:'⚽', desc:'Récords, juegos y campeones'},
+  'Cine y TV':   {icon:'🎬', desc:'Grandes obras de la pantalla'},
+  'Naturaleza':  {icon:'🌿', desc:'Vida animal, plantas y ecosistemas'},
+  'Música':      {icon:'🎵', desc:'Notas, ritmos y artistas'},
+  'Gastronomía': {icon:'🍕', desc:'Sabores del mundo entero'},
+};
+const CAT_NAMES = Object.keys(CATEGORIES);
+
+/* ════════════════════════════════════════════════════════
+   QUESTION BANK
+   normal → 6 options (sliced to numOpts for rounds 1-5)
+   triple → 3 options (rounds 6-7)
+   final  → 2 options (round 8)
+   ════════════════════════════════════════════════════════ */
+// Format: { q, opts:[...], c (correct index) }
+const QBANK = {
+  Historia:{
+    normal:[
+      {q:'¿Qué civilización construyó el Coliseo de Roma?',opts:['Egipcia','Griega','Romana','Persa','Fenicia','Mesopotámica'],c:2},
+      {q:'¿En qué año comenzó la Primera Guerra Mundial?',opts:['1910','1914','1918','1905','1920','1908'],c:1},
+      {q:'¿Quién fue el primer ser humano en pisar la Luna?',opts:['Buzz Aldrin','Yuri Gagarin','Neil Armstrong','John Glenn','Alan Shepard','Michael Collins'],c:2},
+      {q:'¿En qué país se firmó el Tratado de Versalles que puso fin a la WWI?',opts:['Alemania','Reino Unido','Bélgica','Francia','Austria','Suiza'],c:3},
+      {q:'¿Qué imperio fue el más extenso de la historia?',opts:['Romano','Mongol','Español','Británico','Otomano','Persa'],c:1},
+      {q:'¿Qué escritura es la más antigua conocida?',opts:['Jeroglífica','Cuneiforme','Fenicia','Aramea','Griega','China'],c:1},
+      {q:'¿En qué siglo vivió Cleopatra, la última faraona de Egipto?',opts:['Siglo I a.C.','Siglo IV a.C.','Siglo II a.C.','Siglo III a.C.','Siglo I d.C.','Siglo V a.C.'],c:0},
+    ],
+    triple:[
+      {q:'¿Cuántas décadas duró aproximadamente la Pax Romana?',opts:['206 años','500 años','100 años'],c:0},
+      {q:'¿Quién escribió "El Príncipe", tratado político del Renacimiento?',opts:['Maquiavelo','Erasmo de Róterdam','Tomás Moro'],c:0},
+      {q:'¿En qué ciudad fue asesinado el archiduque Francisco Fernando, detonante de la WWI?',opts:['Sarajevo','Viena','Belgrado'],c:0},
+      {q:'¿Cuál fue la primera nación en otorgar el sufragio femenino de forma permanente?',opts:['Nueva Zelanda','Noruega','Finlandia'],c:0},
+    ],
+    final:[
+      {q:'¿El Muro de Berlín cayó en 1989 o en 1991?',opts:['1989','1991'],c:0},
+      {q:'¿Napoleón Bonaparte nació en Córcega o en la Francia continental?',opts:['Córcega','Francia continental'],c:0},
+      {q:'¿La Revolución Francesa comenzó en el siglo XVIII o en el XIX?',opts:['Siglo XVIII','Siglo XIX'],c:0},
+    ],
+  },
+  Ciencia:{
+    normal:[
+      {q:'¿Cuál es el elemento químico más abundante en la corteza terrestre?',opts:['Silicio','Aluminio','Oxígeno','Hierro','Calcio','Nitrógeno'],c:2},
+      {q:'¿Cuántos huesos tiene el cuerpo humano adulto?',opts:['198','213','225','206','187','240'],c:3},
+      {q:'¿Qué planeta tiene el mayor número de lunas conocidas (2024)?',opts:['Júpiter','Urano','Neptuno','Saturno','Marte','Venus'],c:3},
+      {q:'¿A qué velocidad viaja la luz en el vacío (aprox.)?',opts:['150.000 km/s','450.000 km/s','300.000 km/s','600.000 km/s','250.000 km/s','1.000.000 km/s'],c:2},
+      {q:'¿Qué parte del ojo controla la cantidad de luz que entra?',opts:['Córnea','Retina','Cristalino','Iris','Esclerótica','Coroides'],c:3},
+      {q:'¿Cuál es el órgano más grande del cuerpo humano?',opts:['Pulmón','Cerebro','Hígado','Piel','Corazón','Intestino'],c:3},
+      {q:'¿Qué científica fue la primera en ganar dos Premios Nobel en distintas disciplinas?',opts:['Rosalind Franklin','Marie Curie','Dorothy Hodgkin','Lise Meitner','Gertrude Elion','Ada Yonath'],c:1},
+    ],
+    triple:[
+      {q:'¿Cuántos pares de cromosomas tiene una célula humana normal?',opts:['23 pares','22 pares','46 pares'],c:0},
+      {q:'¿Quién desarrolló la teoría general de la relatividad?',opts:['Albert Einstein','Isaac Newton','Max Planck'],c:0},
+      {q:'¿Cuál es el gas más abundante en la atmósfera terrestre?',opts:['Nitrógeno','Oxígeno','Dióxido de carbono'],c:0},
+      {q:'¿Cuántas capas tiene la Tierra en su estructura interna?',opts:['4 capas principales','3 capas','5 capas'],c:0},
+    ],
+    final:[
+      {q:'¿El ADN tiene forma de doble hélice o de triple hélice?',opts:['Doble hélice','Triple hélice'],c:0},
+      {q:'¿El número de Avogadro pertenece a la Química o a la Física clásica newtoniana?',opts:['Química','Física clásica newtoniana'],c:0},
+      {q:'¿El sodio es un metal o un no metal?',opts:['Metal alcalino','No metal'],c:0},
+    ],
+  },
+  Geografía:{
+    normal:[
+      {q:'¿Cuál es el país más grande del mundo por superficie?',opts:['Canadá','China','EEUU','Rusia','Australia','Brasil'],c:3},
+      {q:'¿Qué río tiene el mayor caudal del planeta?',opts:['Nilo','Yangtsé','Misisipi','Congo','Amazonas','Orinoco'],c:4},
+      {q:'¿En qué continente se encuentra Madagascar?',opts:['Asia','Oceanía','América','Europa','Africa','Antártida'],c:4},
+      {q:'¿Cuál es la capital de Australia?',opts:['Sídney','Melbourne','Brisbane','Perth','Canberra','Adelaida'],c:4},
+      {q:'¿Cuál es el volcán más alto del sistema solar conocido?',opts:['Etna','Vesubio','Mauna Kea','Olimpo (Marte)','Chimborazo','Cotopaxi'],c:3},
+      {q:'¿En qué mar interior se encuentra la salinidad más alta del mundo entre grandes mares?',opts:['Mar Mediterráneo','Mar Rojo','Mar Muerto','Mar Caspio','Mar Negro','Mar de Arabia'],c:2},
+      {q:'¿Qué país alberga el mayor número de pirámides del mundo, incluso más que Egipto?',opts:['México','Perú','Sudán','Camboya','China','Guatemala'],c:2},
+    ],
+    triple:[
+      {q:'¿Cuál es el océano más grande del planeta?',opts:['Océano Pacífico','Océano Atlántico','Océano Índico'],c:0},
+      {q:'¿El Monte Everest hace frontera entre Nepal y qué otro territorio?',opts:['Tíbet (China)','Bután','India'],c:0},
+      {q:'¿Cuántos países conforman el continente africano?',opts:['54 países','48 países','60 países'],c:0},
+      {q:'¿Cuál es el país con más vecinos fronterizos (14)?',opts:['Rusia o China (empate)','India','Brasil'],c:0},
+    ],
+    final:[
+      {q:'¿El Amazonas desemboca en el océano Atlántico o en el Pacífico?',opts:['Atlántico','Pacífico'],c:0},
+      {q:'¿Turquía es un país transcontinental entre Europa y Asia, o solo está en Asia?',opts:['Transcontinental Europa-Asia','Solo en Asia'],c:0},
+      {q:'¿El río Nilo fluye hacia el norte o hacia el sur en su tramo final?',opts:['Hacia el norte','Hacia el sur'],c:0},
+    ],
+  },
+  Arte:{
+    normal:[
+      {q:'¿Quién pintó "La noche estrellada"?',opts:['Claude Monet','Paul Gauguin','Pablo Picasso','Salvador Dalí','Edvard Munch','Vincent van Gogh'],c:5},
+      {q:'¿En qué ciudad se encuentra la Capilla Sixtina?',opts:['Roma','Florencia','Venecia','Milán','Nápoles','Bolonia'],c:0},
+      {q:'¿Quién esculpió el famoso "David" de mármol de Florencia?',opts:['Donatello','Bernini','Rafael','Canova','Leonardo da Vinci','Miguel Ángel'],c:5},
+      {q:'¿En qué ciudad está el museo del Louvre?',opts:['Londres','Berlín','Roma','Ámsterdam','Madrid','París'],c:5},
+      {q:'¿Quién creó la corriente artística del Cubismo?',opts:['Henri Matisse','Salvador Dalí','Wassily Kandinsky','Pablo Picasso','Georges Braque (cocrean)','Marc Chagall'],c:3},
+      {q:'¿En qué siglo fue construida la Catedral de Notre Dame de París originalmente?',opts:['Siglo X','Siglo XI','Siglo XIV','Siglo XII','Siglo XV','Siglo XVI'],c:3},
+      {q:'¿Cuál es la obra más cara jamás vendida en subasta (2024)?',opts:['La Gioconda','Nafea faa ipoipo (Gauguin)','Salvator Mundi (da Vinci)','Los girasoles (Van Gogh)','Interchange (de Kooning)','Otoño nº 31 (Pollock)'],c:2},
+    ],
+    triple:[
+      {q:'¿Qué movimiento artístico representó principalmente Salvador Dalí?',opts:['Surrealismo','Expresionismo','Cubismo'],c:0},
+      {q:'¿En qué siglo nació Leonardo da Vinci?',opts:['Siglo XV','Siglo XIV','Siglo XVI'],c:0},
+      {q:'¿"Las Meninas" fue pintada por Velázquez o por Goya?',opts:['Velázquez','Goya','El Greco'],c:0},
+      {q:'¿Cuál es el edificio más visitado del mundo?',opts:['El Louvre','La Torre Eiffel','La Sagrada Familia'],c:0},
+    ],
+    final:[
+      {q:'¿La Sagrada Familia está en Barcelona o en Madrid?',opts:['Barcelona','Madrid'],c:0},
+      {q:'¿La "Mona Lisa" está expuesta en el Louvre de París o en los Uffizi de Florencia?',opts:['El Louvre, París','Uffizi, Florencia'],c:0},
+      {q:'¿"El grito" de Edvard Munch es una obra noruega o austriaca?',opts:['Noruega','Austriaca'],c:0},
+    ],
+  },
+  Deporte:{
+    normal:[
+      {q:'¿Cuántos jugadores hay en un equipo de fútbol durante el partido?',opts:['9','10','12','13','11','8'],c:4},
+      {q:'¿En qué ciudad se celebraron los primeros Juegos Olímpicos modernos en 1896?',opts:['París','Berlín','Londres','Atenas','Roma','Estocolmo'],c:3},
+      {q:'¿Cuántos sets debe ganar un tenista para ganar en Grand Slam masculino?',opts:['2','4','5','1','3','6'],c:4},
+      {q:'¿Qué país ha ganado más Copas del Mundo de fútbol masculino?',opts:['Alemania','Argentina','Francia','España','Brasil','Italia'],c:4},
+      {q:'¿Cuántos metros mide la piscina olímpica de natación?',opts:['25 m','75 m','40 m','50 m','30 m','60 m'],c:3},
+      {q:'¿Quién tiene más Balones de Oro individuales en la historia (2024)?',opts:['Cristiano Ronaldo','Zinedine Zidane','Pelé','Ronaldo Nazário','Lionel Messi','Ronaldinho'],c:4},
+      {q:'¿En qué deporte se entrega el Trofeo Larry O\'Brien?',opts:['Béisbol','Fútbol americano','Tenis','Baloncesto NBA','Hockey hielo','Fútbol'],c:3},
+    ],
+    triple:[
+      {q:'¿Cuántos rings tiene el símbolo olímpico?',opts:['5 anillos','4 anillos','6 anillos'],c:0},
+      {q:'¿Cuántos puntos vale un triple en baloncesto?',opts:['3 puntos','2 puntos','4 puntos'],c:0},
+      {q:'¿En qué ciudad se celebraron los JJ.OO. de verano de 2016?',opts:['Río de Janeiro','Tokio','Londres'],c:0},
+      {q:'¿Qué deporte inventó el Dr. James Naismith en 1891?',opts:['Baloncesto','Voleibol','Balonmano'],c:0},
+    ],
+    final:[
+      {q:'¿La Copa del Mundo de fútbol se celebra cada 4 años o cada 2?',opts:['Cada 4 años','Cada 2 años'],c:0},
+      {q:'¿La Marathon olímpica oficial mide 42,195 km o 40 km?',opts:['42,195 km','40 km'],c:0},
+      {q:'¿El Tour de Francia se corre principalmente en julio o en agosto?',opts:['Julio','Agosto'],c:0},
+    ],
+  },
+  'Cine y TV':{
+    normal:[
+      {q:'¿Quién dirigió "Titanic" (1997) y "Avatar" (2009)?',opts:['Steven Spielberg','Ridley Scott','Peter Jackson','Christopher Nolan','J.J. Abrams','James Cameron'],c:5},
+      {q:'¿De qué país es la serie "La Casa de Papel"?',opts:['México','Argentina','Colombia','Italia','Francia','España'],c:5},
+      {q:'¿En qué año se estrenó la primera película de "Star Wars"?',opts:['1975','1980','1983','1981','1979','1977'],c:5},
+      {q:'¿Cuántos Oscars ganó "Ben-Hur" (1959), récord durante décadas?',opts:['8','10','7','12','9','11'],c:4},
+      {q:'¿Quién interpreta a Tony Stark/Iron Man en el Universo Cinematográfico Marvel?',opts:['Chris Evans','Mark Ruffalo','Chris Hemsworth','Jeremy Renner','Benedict Cumberbatch','Robert Downey Jr.'],c:5},
+      {q:'¿Qué película fue la primera en recaudar más de 1.000 millones $ en taquilla mundial?',opts:['El Rey León','Parque Jurásico','Titanic','Avatar','E.T.','El Sexto Sentido'],c:2},
+      {q:'¿Cuántas temporadas tiene la serie completa "Breaking Bad"?',opts:['4 temporadas','6 temporadas','3 temporadas','7 temporadas','5 temporadas','8 temporadas'],c:4},
+    ],
+    triple:[
+      {q:'¿Cuántos Oscars ganó "El señor de los anillos: El retorno del rey" (2004)?',opts:['11 Oscars','9 Oscars','13 Oscars'],c:0},
+      {q:'¿Quién dirigió la trilogía de "El señor de los anillos"?',opts:['Peter Jackson','Steven Spielberg','George Lucas'],c:0},
+      {q:'¿"Juego de Tronos" está basada en las novelas de George R.R. Martin o J.R.R. Tolkien?',opts:['George R.R. Martin','J.R.R. Tolkien','Terry Pratchett'],c:0},
+      {q:'¿En qué ciudad está ambientada principalmente la serie "Breaking Bad"?',opts:['Albuquerque (Nuevo México)','Las Vegas','Houston'],c:0},
+    ],
+    final:[
+      {q:'¿"El Padrino" fue dirigida por Francis Ford Coppola o por Martin Scorsese?',opts:['Francis Ford Coppola','Martin Scorsese'],c:0},
+      {q:'¿Audrey Hepburn ganó el Oscar por "Desayuno con diamantes" o por "Vacaciones en Roma"?',opts:['Vacaciones en Roma','Desayuno con diamantes'],c:0},
+      {q:'¿La película "Parasite" que ganó el Oscar es coreana o japonesa?',opts:['Coreana','Japonesa'],c:0},
+    ],
+  },
+  Naturaleza:{
+    normal:[
+      {q:'¿Cuántas patas tiene una araña?',opts:['4','6','10','12','8','14'],c:4},
+      {q:'¿Qué animal tiene la gestación más larga del reino animal terrestre?',opts:['Ballena azul','Jirafa','Rinoceronte','Hipopótamo','Elefante africano','Orca'],c:4},
+      {q:'¿Cuál es el árbol más alto del mundo conocido (secuoya "Hyperion")?',opts:['Baobab','Eucalipto','Roble','Abeto Douglas','Secuoya gigante','Secuoya costera'],c:5},
+      {q:'¿Cuántos corazones tiene un pulpo?',opts:['1','2','4','5','3','6'],c:4},
+      {q:'¿Qué animal tiene la lengua más larga en relación a su cuerpo?',opts:['Jirafa','Cocodrilo','Rana','Vaca','Camaleón','Oso hormiguero'],c:4},
+      {q:'¿Cuántos años puede vivir como máximo una tortuga de Galápagos?',opts:['80 años','100 años','200 años','60 años','150 años','300 años'],c:4},
+      {q:'¿Cuál es el veneno de origen animal más potente conocido?',opts:['Mamba negra','Tarántula','Cobra real','Escorpión de deathstalker','Medusa Caja (Chironex fleckeri)','Pez piedra'],c:4},
+    ],
+    triple:[
+      {q:'¿A cuántos km/h puede correr un guepardo a máxima velocidad?',opts:['Hasta 120 km/h','Hasta 90 km/h','Hasta 60 km/h'],c:0},
+      {q:'¿Cuántas especies de pingüinos existen aproximadamente?',opts:['18 especies','10 especies','30 especies'],c:0},
+      {q:'¿Los murciélagos son ciegos o tienen perfecta visión nocturna?',opts:['Tienen buena visión','Son totalmente ciegos','Solo ven en blanco y negro'],c:0},
+      {q:'¿Qué porcentaje del cuerpo de las medusas está compuesto de agua?',opts:['Hasta el 98%','Alrededor del 70%','Exactamente el 85%'],c:0},
+    ],
+    final:[
+      {q:'¿El tiburón blanco es un mamífero o un pez cartilaginoso?',opts:['Pez cartilaginoso','Mamífero marino'],c:0},
+      {q:'¿La fotosíntesis produce oxígeno o dióxido de carbono como subproducto?',opts:['Oxígeno','Dióxido de carbono'],c:0},
+      {q:'¿El ADN de los humanos coincide más en un 98% con el de los chimpancés o con el de los delfines?',opts:['Chimpancés','Delfines'],c:0},
+    ],
+  },
+  Música:{
+    normal:[
+      {q:'¿De qué país es el grupo ABBA?',opts:['Noruega','Finlandia','Dinamarca','Holanda','Austria','Suecia'],c:5},
+      {q:'¿Cuántas sinfonías compuso Ludwig van Beethoven?',opts:['7','8','10','6','12','9'],c:5},
+      {q:'¿Qué instrumento toca principalmente Elton John en sus actuaciones?',opts:['Guitarra eléctrica','Violín','Batería','Saxofón','Bajo','Piano'],c:5},
+      {q:'¿Cómo se llamaba originalmente el grupo de John Lennon antes de ser The Beatles?',opts:['The Cavern Boys','The Quarrymen','The Silver Beetles','The Blackjacks','The Rainbows','The Nurk Twins'],c:1},
+      {q:'¿En qué ciudad nació Freddie Mercury, vocalista de Queen?',opts:['Mumbai','Londres','Bombay','El Cairo','Lahore','Zanzíbar'],c:5},
+      {q:'¿Quién compuso la ópera "Carmen", una de las más representadas del mundo?',opts:['Verdi','Wagner','Puccini','Mozart','Rossini','Bizet'],c:5},
+      {q:'¿Qué cantante fue el primero en superar los 100 millones de streams en Spotify en un solo día?',opts:['Drake','Ed Sheeran','The Weeknd','Justin Bieber','Bad Bunny','Taylor Swift'],c:4},
+    ],
+    triple:[
+      {q:'¿Quién es conocida mundialmente como "La Reina del Pop"?',opts:['Madonna','Beyoncé','Lady Gaga'],c:0},
+      {q:'¿Cuántos integrantes tenía el grupo The Beatles?',opts:['4 integrantes','3 integrantes','5 integrantes'],c:0},
+      {q:'¿En qué año se disolvió oficialmente The Beatles?',opts:['1970','1969','1972'],c:0},
+      {q:'¿Qué cantante latino ha ganado más Grammys (28 hasta 2024)?',opts:['Shakira','Ricky Martin','Alejandro Sanz'],c:0},
+    ],
+    final:[
+      {q:'¿Michael Jackson era el "Rey del Pop" o el "Príncipe del Pop"?',opts:['Rey del Pop','Príncipe del Pop'],c:0},
+      {q:'¿"La Traviata" es una ópera de Verdi o de Puccini?',opts:['Verdi','Puccini'],c:0},
+      {q:'¿Beethoven era sordo cuando compuso su famosa Novena Sinfonía?',opts:['Sí, era completamente sordo','No, todavía oía parcialmente'],c:0},
+    ],
+  },
+  Gastronomía:{
+    normal:[
+      {q:'¿De qué país es originaria la pizza Margarita?',opts:['Grecia','España','Francia','EEUU','Turquía','Italia'],c:5},
+      {q:'¿Cuál es la especia más cara del mundo por peso?',opts:['Vainilla','Cardamomo','Canela','Trufa negra','Clavo','Azafrán'],c:5},
+      {q:'¿De qué animal procede el caviar tradicional de mayor precio?',opts:['Salmón','Trucha','Carpa','Esturión','Lucio','Beluga (esturión)'],c:3},
+      {q:'¿Cuál es el ingrediente base de la salsa guacamole?',opts:['Tomate','Cebolla','Jalapeño','Chile','Aguacate','Lima'],c:4},
+      {q:'¿En qué país se inventó el sushi según la tradición culinaria?',opts:['China','Corea','Tailandia','Vietnam','Japón','Filipinas'],c:4},
+      {q:'¿Qué país produce más del 70% del aceite de oliva virgen extra mundial?',opts:['Grecia','Portugal','Marruecos','Italia','Túnez','España'],c:5},
+      {q:'¿Cuál es el queso más consumido del mundo por volumen?',opts:['Gouda','Brie','Parmesano','Emmental','Cheddar','Mozzarella'],c:4},
+    ],
+    triple:[
+      {q:'¿Cuál es el chocolate con mayor porcentaje de cacao sin azúcar añadida?',opts:['Chocolate negro 100%','Chocolate oscuro 70%','Chocolate con leche'],c:0},
+      {q:'¿El champán solo puede producirse legalmente en qué región de Francia?',opts:['Champagne','Borgoña','Burdeos'],c:0},
+      {q:'¿Cuál es el único continente donde NO crece la vid de forma natural para producir vino?',opts:['Antártida','África','Oceanía'],c:0},
+      {q:'¿Qué cocina tiene el mayor número de estrellas Michelin del mundo (2024)?',opts:['Japonesa','Francesa','Italiana'],c:0},
+    ],
+    final:[
+      {q:'¿La paella es originaria de Valencia o de Cataluña?',opts:['Valencia','Cataluña'],c:0},
+      {q:'¿El whisky escocés (Scotch) debe envejecer un mínimo de 3 años o de 5 años?',opts:['3 años mínimo','5 años mínimo'],c:0},
+      {q:'¿El queso Camembert es de origen francés o suizo?',opts:['Francés','Suizo'],c:0},
+    ],
+  },
+};
+
+/* ════════════════════════════════════════════════════════
+   GAME STATE
+   ════════════════════════════════════════════════════════ */
+let G = {};
+function initState(){
+  G = {
+    round: 0,    // 0-indexed (0-7)
+    prize: 0,
+    phase: 'category',   // 'category' | 'question' | 'reveal'
+    cats3: [],           // 3 categories for this round
+    selectedCat: null,
+    currentQ: null,
+    chipsLeft: 0,
+    dist: [],            // chip count per option
+    results: [],         // {round,cat,gain,correct,chips}
+    usedQ: {},           // { cat_type: [indices used] }
+  };
+}
+
+/* ════════════════════════════════════════════════════════
+   UTILITY
+   ════════════════════════════════════════════════════════ */
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5) }
+function fmtEur(n){ return n.toLocaleString('es-ES')+'  €' }
+function fmtEurShort(n){
+  if(n>=1000000) return '1.000.000 €';
+  if(n>=1000) return (n/1000).toFixed(0)+'k €';
+  return n+'€';
+}
+
+let toastTimer;
+function toast(msg,col='#fff'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.color=col; t.style.borderColor=col+'44';
+  t.classList.add('show'); clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ════════════════════════════════════════════════════════
+   QUESTION PICKER
+   ════════════════════════════════════════════════════════ */
+function pickQuestion(cat, type, numOpts){
+  const key = cat+'_'+type;
+  if(!G.usedQ[key]) G.usedQ[key]=[];
+  const pool = QBANK[cat][type] || [];
+  const available = pool.map((_,i)=>i).filter(i=>!G.usedQ[key].includes(i));
+  const pool2 = available.length>0 ? available : pool.map((_,i)=>i); // reset if exhausted
+  const idx = pool2[Math.floor(Math.random()*pool2.length)];
+  G.usedQ[key].push(idx);
+  const raw = pool[idx];
+  if(type==='triple'||type==='final') return {q:raw.q, opts:[...raw.opts], c:raw.c};
+  // normal: slice to numOpts, keeping correct
+  return sliceOpts(raw, numOpts);
+}
+
+function sliceOpts(raw, n){
+  const allIdx = raw.opts.map((_,i)=>i);
+  const correctI = raw.c;
+  const others = shuffle(allIdx.filter(i=>i!==correctI));
+  const chosen = [correctI, ...others.slice(0, n-1)];
+  const shuffled = shuffle(chosen);
+  return {
+    q: raw.q,
+    opts: shuffled.map(i=>raw.opts[i]),
+    c: shuffled.indexOf(correctI),
+  };
+}
+
+/* ════════════════════════════════════════════════════════
+   BACKGROUND CANVAS
+   ════════════════════════════════════════════════════════ */
+(function bgCanvas(){
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  const stars = [];
+  function resize(){ canvas.width=innerWidth; canvas.height=innerHeight; }
+  resize(); window.addEventListener('resize',resize);
+  for(let i=0;i<180;i++) stars.push({
+    x:Math.random(), y:Math.random(),
+    r:Math.random()*.9+.2, a:Math.random(), da:Math.random()*.008+.002,
+  });
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // gradient bg
+    const grd=ctx.createRadialGradient(canvas.width*.5,-50,50,canvas.width*.5,canvas.height*.5,canvas.height*.9);
+    grd.addColorStop(0,'rgba(0,30,80,0.55)');
+    grd.addColorStop(.5,'rgba(4,4,15,0)');
+    grd.addColorStop(1,'rgba(0,10,40,0.15)');
+    ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // light beams
+    const beams=[.15,.32,.5,.68,.85];
+    beams.forEach((xf,i)=>{
+      const bx=canvas.width*xf;
+      const bg=ctx.createLinearGradient(bx,0,bx,canvas.height*.7);
+      bg.addColorStop(0,i===2?'rgba(255,200,0,.07)':'rgba(255,170,0,.04)');
+      bg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.moveTo(bx-1,0); ctx.lineTo(bx+1,0);
+      ctx.lineTo(bx+40,canvas.height*.7); ctx.lineTo(bx-40,canvas.height*.7); ctx.closePath();
+      ctx.fillStyle=bg; ctx.fill();
+    });
+    // stars
+    stars.forEach(s=>{
+      s.a+=s.da; if(s.a>1||s.a<0) s.da*=-1;
+      ctx.beginPath(); ctx.arc(s.x*canvas.width, s.y*canvas.height, s.r, 0, Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.a*0.7})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ════════════════════════════════════════════════════════
+   CONFETTI
+   ════════════════════════════════════════════════════════ */
+let confActive=false;
+function launchConfetti(duration=5000){
+  if(confActive) return; confActive=true;
+  const cv=document.getElementById('confetti'), ctx=cv.getContext('2d');
+  cv.width=innerWidth; cv.height=innerHeight;
+  const cols=['#FFD700','#0088FF','#00E066','#FF2244','#ffffff','#FF9020','#FF77FF'];
+  const parts=Array.from({length:220},()=>({
+    x:Math.random()*cv.width, y:Math.random()*cv.height-cv.height,
+    w:Math.random()*12+4, h:Math.random()*6+2,
+    col:cols[Math.floor(Math.random()*cols.length)],
+    rot:Math.random()*360, rv:(Math.random()-.5)*8,
+    vx:(Math.random()-.5)*5, vy:Math.random()*4+2,
+  }));
+  let fr, end=Date.now()+duration;
+  function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.rv;
+      if(p.y>cv.height+20){p.y=-20; p.x=Math.random()*cv.width;}
+      ctx.save(); ctx.globalAlpha=.9; ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.col; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if(Date.now()<end) fr=requestAnimationFrame(draw);
+    else{ cancelAnimationFrame(fr); ctx.clearRect(0,0,cv.width,cv.height); confActive=false; }
+  }
+  draw();
+}
+
+/* ════════════════════════════════════════════════════════
+   PREVIEW in INTRO
+   ════════════════════════════════════════════════════════ */
+(function buildPreview(){
+  const wrap=document.getElementById('preview-chips');
+  ROUND_CFG.forEach(cfg=>{
+    const d=document.createElement('div');
+    d.className='preview-round';
+    const max=cfg.chips*CHIP_VAL;
+    d.innerHTML=`<span>Ronda ${cfg.r}</span>${fmtEurShort(max)}<br><small style="color:var(--dim);font-size:.58rem">${cfg.chips} fichas · ${cfg.numOpts} opc.</small>`;
+    wrap.appendChild(d);
+  });
+})();
+
+/* ════════════════════════════════════════════════════════
+   SCREEN MANAGEMENT
+   ════════════════════════════════════════════════════════ */
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden'); }
+
+/* ════════════════════════════════════════════════════════
+   START GAME
+   ════════════════════════════════════════════════════════ */
+function startGame(){
+  if(AC.state==='suspended') AC.resume();
+  initState();
+  show('s-game');
+  buildLadder();
+  G.round=0;
+  startRound();
+}
+
+/* ════════════════════════════════════════════════════════
+   ROUND START
+   ════════════════════════════════════════════════════════ */
+function startRound(){
+  const cfg=ROUND_CFG[G.round];
+  G.phase='category';
+  G.selectedCat=null;
+  G.currentQ=null;
+  G.chipsLeft=cfg.chips;
+  G.dist=[];
+  updateTopBar();
+  updateLadder();
+  sfxRoundStart();
+  renderCategory(cfg);
+}
+
+/* ════════════════════════════════════════════════════════
+   UPDATE TOPBAR
+   ════════════════════════════════════════════════════════ */
+function updateTopBar(){
+  document.getElementById('tb-round').textContent=G.round+1;
+  document.getElementById('tb-chips').textContent=G.chipsLeft;
+  const ep=document.getElementById('tb-prize');
+  ep.textContent=G.prize>0?fmtEur(G.prize):'0 €';
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER: CATEGORY SELECTION
+   ════════════════════════════════════════════════════════ */
+function renderCategory(cfg){
+  // pick 3 random categories (no repeats across the last 3)
+  const recent=(G.results||[]).slice(-3).map(r=>r.cat);
+  const pool=shuffle(CAT_NAMES.filter(c=>!recent.includes(c)));
+  G.cats3=pool.slice(0,3).length>=3?pool.slice(0,3):shuffle(CAT_NAMES).slice(0,3);
+
+  const typeTxt=cfg.type==='normal'
+    ?`<span class="type-badge normal">▸ ${cfg.chips} opciones normales</span>`
+    :cfg.type==='triple'
+    ?`<span class="type-badge triple">⚡ RONDA TRIPLE — mínimo 2 opciones cubiertas</span>`
+    :`<span class="type-badge final">🔥 RONDA FINAL — todo a una sola respuesta</span>`;
+
+  const chipsRow=Array.from({length:cfg.chips},(_,i)=>`<div class="chip-icon" style="animation-delay:${i*.06}s">25K</div>`).join('');
+
+  const catsHTML=G.cats3.map(cat=>{
+    const info=CATEGORIES[cat];
+    return `<div class="cat-card" onclick="selectCategory('${cat}')">
+      <div class="cc-icon">${info.icon}</div>
+      <div class="cc-name">${cat}</div>
+      <div class="cc-desc">${info.desc}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('main-col').innerHTML=`
+    <div class="phase-cat slide-up">
+      <div class="phase-title">Ronda <em>${G.round+1}</em> de 8 — Elige tu categoría</div>
+      <div class="round-info-card">
+        <div class="ri-item"><div class="ri-label">Fichas</div><div class="ri-val blue">${cfg.chips}</div></div>
+        <div class="ri-item"><div class="ri-label">Valor/ficha</div><div class="ri-val">25.000 €</div></div>
+        <div class="ri-item"><div class="ri-label">Máximo ronda</div><div class="ri-val green">${fmtEur(cfg.chips*CHIP_VAL)}</div></div>
+        <div class="ri-item"><div class="ri-label">Tipo</div>${typeTxt}</div>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:center">${chipsRow}</div>
+      <div class="cats-grid">${catsHTML}</div>
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   SELECT CATEGORY
+   ════════════════════════════════════════════════════════ */
+function selectCategory(cat){
+  G.selectedCat=cat;
+  G.phase='question';
+  const cfg=ROUND_CFG[G.round];
+  const qtype=cfg.type==='normal'?'normal':(cfg.type==='triple'?'triple':'final');
+  G.currentQ=pickQuestion(cat, qtype, cfg.numOpts);
+  G.dist=new Array(cfg.numOpts).fill(0);
+  G.chipsLeft=cfg.chips;
+  updateTopBar();
+  renderQuestion(cfg);
+  sfxRoundStart();
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER: QUESTION + CHIP DISTRIBUTION
+   ════════════════════════════════════════════════════════ */
+function renderQuestion(cfg){
+  const catInfo=CATEGORIES[G.selectedCat];
+  const q=G.currentQ;
+  const letters=['A','B','C','D','E','F'];
+
+  const optsHTML=q.opts.map((opt,i)=>`
+    <div class="opt" id="opt-${i}" onclick="addChip(${i})">
+      <span class="opt-letter">${letters[i]}</span>
+      <div class="opt-text">${opt}</div>
+      <div class="opt-chips" id="chips-${i}"></div>
+      <div class="correct-tag">CORRECTA ✓</div>
+    </div>`).join('');
+
+  let typeMsg='';
+  if(cfg.type==='triple')
+    typeMsg=`<div class="type-instruction triple">⚡ Debes cubrir al menos 2 respuestas distintas para poder confirmar</div>`;
+  if(cfg.type==='final')
+    typeMsg=`<div class="type-instruction final">🔥 RONDA FINAL — Haz clic en una respuesta para apostar las ${cfg.chips} fichas (200.000 €) ¡en una sola!</div>`;
+
+  const bankHTML=Array.from({length:cfg.chips},(_,i)=>
+    `<div class="bc" id="bc-${i}" onclick="bankChipClick(${i})">25K</div>`).join('');
+
+  document.getElementById('main-col').innerHTML=`
+    <div class="phase-q slide-up">
+      <div class="q-header">
+        <div class="q-cat-pill"><span class="q-cat-ico">${catInfo.icon}</span><span class="q-cat-nm">${G.selectedCat}</span></div>
+        <div class="chips-pill">
+          <span class="chips-pill-num" id="chips-left-num">${cfg.chips}</span>
+          <span class="chips-pill-lbl">fichas<br>restantes</span>
+        </div>
+      </div>
+      <div class="question-box"><div class="q-text">${q.q}</div></div>
+      ${typeMsg}
+      <div class="chip-bank-wrap">
+        <div class="cb-label">Tus fichas — haz clic en una respuesta para asignarlas</div>
+        <div class="chip-bank" id="chip-bank">${bankHTML}</div>
+      </div>
+      <div class="opts-grid o${cfg.numOpts}" id="opts-grid">${optsHTML}</div>
+      <button class="btn-confirm" id="btn-confirm" onclick="confirmAnswer()" disabled>
+        🎯 CONFIRMAR RESPUESTA
+      </button>
+    </div>`;
+
+  if(cfg.type==='final') setupFinalOpts(cfg);
+}
+
+/* ════════════════════════════════════════════════════════
+   FINAL ROUND OPTION CLICK — all-or-nothing
+   ════════════════════════════════════════════════════════ */
+function setupFinalOpts(cfg){
+  G.currentQ.opts.forEach((_,i)=>{
+    document.getElementById('opt-'+i).onclick=()=>finalSelectOpt(i,cfg);
+    document.getElementById('opt-'+i).classList.add('final-pulse');
+  });
+}
+function finalSelectOpt(i,cfg){
+  if(AC.state==='suspended') AC.resume();
+  sfxChip();
+  G.dist=new Array(cfg.numOpts).fill(0);
+  G.dist[i]=cfg.chips;
+  G.chipsLeft=0;
+  G.currentQ.opts.forEach((_,j)=>{
+    const el=document.getElementById('opt-'+j);
+    el.classList.remove('loaded','final-pulse');
+    document.getElementById('chips-'+j).innerHTML='';
+  });
+  const el=document.getElementById('opt-'+i);
+  el.classList.add('loaded');
+  const chipsEl=document.getElementById('chips-'+i);
+  chipsEl.innerHTML='';
+  for(let k=0;k<cfg.chips;k++){
+    const c=document.createElement('div'); c.className='oc'; c.style.animationDelay=k*.04+'s';
+    chipsEl.appendChild(c);
+  }
+  // mark bank chips spent
+  for(let k=0;k<cfg.chips;k++){
+    const bc=document.getElementById('bc-'+k);
+    if(bc) bc.classList.add('spent');
+  }
+  document.getElementById('chips-left-num').textContent='0';
+  document.getElementById('btn-confirm').disabled=false;
+  toast(`🎯 ${cfg.chips} fichas (${fmtEur(cfg.chips*CHIP_VAL)}) en "${G.currentQ.opts[i]}"`, '#FFD700');
+}
+
+/* ════════════════════════════════════════════════════════
+   ADD CHIP (normal / triple rounds)
+   ════════════════════════════════════════════════════════ */
+function bankChipClick(bankIdx){
+  // find first un-spent bank chip and use it (user can also click option directly)
+  if(G.chipsLeft<=0) return;
+  // just cosmetic feedback
+  sfxChip();
+}
+
+function addChip(optIdx){
+  if(AC.state==='suspended') AC.resume();
+  const cfg=ROUND_CFG[G.round];
+  if(cfg.type==='final') return; // handled separately
+  if(G.chipsLeft<=0){ toast('¡No quedan fichas! Quita alguna para redistribuir.','#FF9020'); return; }
+  G.dist[optIdx]++;
+  G.chipsLeft--;
+  sfxChip();
+  // mark one bank chip as spent
+  const bankChips=document.querySelectorAll('.bc:not(.spent)');
+  if(bankChips.length>0) bankChips[0].classList.add('spent');
+  refreshOptChips(cfg);
+  updateChipsLeftDisplay();
+  checkConfirm(cfg);
+}
+
+function removeChip(optIdx, event){
+  event.stopPropagation();
+  const cfg=ROUND_CFG[G.round];
+  if(cfg.type==='final') return;
+  if(G.dist[optIdx]<=0) return;
+  G.dist[optIdx]--;
+  G.chipsLeft++;
+  sfxRemove();
+  // un-spent one bank chip
+  const spent=document.querySelectorAll('.bc.spent');
+  if(spent.length>0) spent[spent.length-1].classList.remove('spent');
+  refreshOptChips(cfg);
+  updateChipsLeftDisplay();
+  checkConfirm(cfg);
+}
+
+function refreshOptChips(cfg){
+  G.dist.forEach((count,i)=>{
+    const el=document.getElementById('opt-'+i);
+    const chipsEl=document.getElementById('chips-'+i);
+    el.classList.toggle('loaded',count>0);
+    chipsEl.innerHTML='';
+    for(let k=0;k<count;k++){
+      const c=document.createElement('div'); c.className='oc';
+      c.style.animationDelay=k*.03+'s';
+      c.addEventListener('click',(e)=>removeChip(i,e));
+      chipsEl.appendChild(c);
+    }
+  });
+}
+
+function updateChipsLeftDisplay(){
+  const el=document.getElementById('chips-left-num');
+  if(el){ el.textContent=G.chipsLeft; el.classList.add('bounce'); setTimeout(()=>el.classList.remove('bounce'),350); }
+  document.getElementById('tb-chips').textContent=G.chipsLeft;
+}
+
+function checkConfirm(cfg){
+  let ok=G.chipsLeft===0;
+  if(cfg.type==='triple'){
+    // must cover at least 2 options
+    const covered=G.dist.filter(d=>d>0).length;
+    ok=ok&&covered>=2;
+  }
+  document.getElementById('btn-confirm').disabled=!ok;
+}
+
+/* ════════════════════════════════════════════════════════
+   CONFIRM ANSWER
+   ════════════════════════════════════════════════════════ */
+function confirmAnswer(){
+  sfxConfirm();
+  const cfg=ROUND_CFG[G.round];
+  const correctIdx=G.currentQ.c;
+  const chipsOnCorrect=G.dist[correctIdx];
+  const gain=chipsOnCorrect*CHIP_VAL;
+  G.prize+=gain;
+  G.results.push({round:G.round,cat:G.selectedCat,gain,correct:chipsOnCorrect,chips:cfg.chips});
+
+  // disable interaction
+  document.getElementById('btn-confirm').disabled=true;
+  disableOpts();
+
+  // animate reveal
+  revealOptions(correctIdx, gain, cfg);
+}
+
+function disableOpts(){
+  document.querySelectorAll('.opt').forEach(el=>{el.style.pointerEvents='none'});
+}
+
+function revealOptions(correctIdx, gain, cfg){
+  const letters=['A','B','C','D','E','F'];
+  // First flash all options
+  G.dist.forEach((count, i)=>{
+    setTimeout(()=>{
+      sfxReveal();
+      const el=document.getElementById('opt-'+i);
+      if(i===correctIdx){
+        el.classList.add('reveal-correct');
+        // animate chips as won
+        document.querySelectorAll(`#chips-${i} .oc`).forEach((c,ci)=>{
+          setTimeout(()=>c.classList.add('won'),ci*80);
+        });
+      } else if(count>0){
+        el.classList.add('reveal-wrong');
+        document.querySelectorAll(`#chips-${i} .oc`).forEach((c,ci)=>{
+          setTimeout(()=>c.classList.add('lost'),ci*80);
+        });
+      }
+    }, i*200);
+  });
+
+  const revealDelay = G.currentQ.opts.length*200+400;
+  setTimeout(()=>showRevealModal(correctIdx, gain, cfg), revealDelay);
+}
+
+/* ════════════════════════════════════════════════════════
+   REVEAL MODAL
+   ════════════════════════════════════════════════════════ */
+function showRevealModal(correctIdx, gain, cfg){
+  const isCorrect=gain>0;
+  const isRoundEnd=G.round===7;
+
+  if(isCorrect){ sfxCorrect(); if(G.prize>=1000000) sfxMillion(); }
+  else if(cfg.type==='final'){ sfxWrong(); }
+  else { sfxWrong(); }
+
+  const correctAns=G.currentQ.opts[correctIdx];
+  let icon, titleCls, title, sub;
+
+  if(isCorrect && gain===cfg.chips*CHIP_VAL){
+    icon='🏆'; titleCls='ct'; title='¡PERFECTO!';
+    sub=`Pusiste todas las fichas en la respuesta correcta`;
+  } else if(isCorrect){
+    icon='✅'; titleCls='ct'; title='¡CORRECTO!';
+    sub=`Acertaste con ${gain/CHIP_VAL} de tus ${cfg.chips} fichas`;
+  } else {
+    icon='❌'; titleCls='cw'; title='¡FALLADO!';
+    sub=`Ninguna ficha estaba en la respuesta correcta`;
+  }
+
+  const gainStr=gain>0?`+${fmtEur(gain)}`:'0 €';
+  const btnLabel=isRoundEnd?'Ver resultado final':'Siguiente ronda →';
+
+  const modal=document.createElement('div');
+  modal.className='reveal-overlay'; modal.id='reveal-modal';
+  modal.innerHTML=`
+    <div class="reveal-card ${isCorrect?'rc-correct':'rc-wrong'}">
+      <div class="rc-icon">${icon}</div>
+      <div class="rc-title ${titleCls}">${title}</div>
+      <div class="rc-sub">${sub}</div>
+      <div class="rc-answer">Respuesta correcta: <strong>${correctAns}</strong></div>
+      <div class="rc-gain">${gainStr}</div>
+      <div class="rc-total">Premio acumulado: <strong>${fmtEur(G.prize)}</strong></div>
+      <button class="btn-next" onclick="closeReveal()">${btnLabel}</button>
+    </div>`;
+  document.body.appendChild(modal);
+  updateLadder();
+
+  // bump prize display
+  const ep=document.getElementById('tb-prize');
+  ep.textContent=fmtEur(G.prize);
+  ep.classList.add('bump'); setTimeout(()=>ep.classList.remove('bump'),800);
+
+  if(G.prize>=500000) setTimeout(()=>launchConfetti(3000), 500);
+}
+
+function closeReveal(){
+  const m=document.getElementById('reveal-modal');
+  if(m) m.remove();
+  G.round++;
+  if(G.round>=8) endGame();
+  else startRound();
+}
+
+/* ════════════════════════════════════════════════════════
+   PRIZE LADDER
+   ════════════════════════════════════════════════════════ */
+function buildLadder(){
+  const wrap=document.getElementById('ladder-rows');
+  wrap.innerHTML='';
+  const checkpoints=[2,5]; // after round 3 (idx2) and round 6 (idx5)
+  ROUND_CFG.forEach((cfg,i)=>{
+    const row=document.createElement('div');
+    row.className='lp-row';
+    row.id='lp-'+i;
+    const max=cfg.chips*CHIP_VAL;
+    const ckMark=checkpoints.includes(i)?'<div style="position:absolute;right:-2px;top:-2px;font-size:.55rem">🔒</div>':'';
+    row.innerHTML=`${ckMark}<div class="lp-num">${i+1}</div><div class="lp-ico" id="lp-ico-${i}">◦</div><div class="lp-amt" id="lp-amt-${i}">${fmtEurShort(max)}</div>`;
+    wrap.appendChild(row);
+    if(i===2||i===5){ const div=document.createElement('div'); div.className='lp-divider'; wrap.appendChild(div); }
+  });
+  // total
+  const sep=document.createElement('div'); sep.className='lp-divider'; wrap.appendChild(sep);
+  const tot=document.createElement('div'); tot.style.cssText='display:flex;justify-content:space-between;padding:5px 8px;';
+  tot.innerHTML=`<span style="font-size:.7rem;color:var(--dim)">Total</span><span id="lp-total" style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--green)">0 €</span>`;
+  wrap.appendChild(tot);
+}
+
+function updateLadder(){
+  ROUND_CFG.forEach((_,i)=>{
+    const row=document.getElementById('lp-'+i);
+    const ico=document.getElementById('lp-ico-'+i);
+    const amt=document.getElementById('lp-amt-'+i);
+    if(!row) return;
+    row.classList.remove('lp-current','lp-past-win','lp-past-zero');
+    ico.textContent='◦';
+    if(i===G.round){ row.classList.add('lp-current'); ico.textContent='▶'; }
+    else if(i<G.round){
+      const res=G.results.find(r=>r.round===i);
+      if(res&&res.gain>0){ row.classList.add('lp-past-win'); ico.textContent='✓'; amt.textContent='+'+fmtEurShort(res.gain); }
+      else{ row.classList.add('lp-past-zero'); ico.textContent='✗'; amt.textContent='0 €'; }
+    }
+  });
+  const tot=document.getElementById('lp-total');
+  if(tot) tot.textContent=fmtEur(G.prize);
+}
+
+/* ════════════════════════════════════════════════════════
+   END GAME
+   ════════════════════════════════════════════════════════ */
+function endGame(){
+  show('s-end');
+  const correctRounds=G.results.filter(r=>r.gain>0).length;
+  const zeroRounds=G.results.filter(r=>r.gain===0).length;
+  const pct=Math.round((G.prize/1000000)*100);
+  let headline='';
+  if(G.prize===1000000){ headline='¡MILLÓN COMPLETO! 🎊'; sfxMillion(); launchConfetti(8000); }
+  else if(G.prize>=500000){ headline='¡Resultado extraordinario!'; sfxCorrect(); launchConfetti(5000); }
+  else if(G.prize>=200000){ headline='¡Muy buen juego!'; sfxCorrect(); }
+  else if(G.prize>0){ headline='Conseguiste llevarte algo.'; }
+  else{ headline='Esta vez no fue tu día.'; sfxWrong(); }
+
+  const bkRows=G.results.map(r=>{
+    const cfg=ROUND_CFG[r.round];
+    const gainCls=r.gain>0?'pos':'zer';
+    const gainTxt=r.gain>0?`+${fmtEur(r.gain)}`:'0 €';
+    return `<div class="bk-row">
+      <div class="bk-r">R${r.round+1}</div>
+      <div class="bk-c">${CATEGORIES[r.cat].icon} ${r.cat}</div>
+      <div class="bk-info">${r.correct}/${cfg.chips} fichas</div>
+      <div class="bk-gain ${gainCls}">${gainTxt}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('end-wrap').innerHTML=`
+    <div class="end-logo">Atrapa un Millón</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.12em;color:rgba(255,255,255,.8)">${headline}</div>
+    <div class="end-prize-wrap">
+      <div class="end-pl">Tu premio final</div>
+      <div class="end-pa">${fmtEur(G.prize)}</div>
+    </div>
+    <div style="font-size:.85rem;color:var(--dim)">Has conseguido el <strong style="color:var(--gold)">${pct}%</strong> del millón</div>
+    <div class="end-stats">
+      <div class="es-box"><div class="es-val g">${correctRounds}</div><div class="es-lbl">Rondas con premio</div></div>
+      <div class="es-box"><div class="es-val r">${zeroRounds}</div><div class="es-lbl">Rondas en blanco</div></div>
+      <div class="es-box"><div class="es-val gold">${pct}%</div><div class="es-lbl">Del millón</div></div>
+    </div>
+    <div class="breakdown">
+      <div class="bk-header">Resumen por rondas</div>
+      ${bkRows}
+    </div>
+    <button class="btn-again" onclick="startGame()">🔄 Volver a Jugar</button>`;
+
+  updateLadder();
+}
+</script>
+</body>
+</html>
